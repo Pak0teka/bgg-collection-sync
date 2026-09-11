@@ -47,23 +47,48 @@ def download_collection():
         }
     )
 
-    for attempt in range(1, 6):
+    for attempt in range(1, 11):
         try:
             with urllib.request.urlopen(request, timeout=60) as response:
-                return response.read()
+
+                # BGG usa HTTP 202 mientras prepara colecciones
+                # que requieren más procesamiento, por ejemplo stats=1.
+                if response.status == 202:
+                    print(
+                        f"BGG está preparando la colección. "
+                        f"Intento {attempt}/10. Esperando 10 segundos..."
+                    )
+                    time.sleep(10)
+                    continue
+
+                if response.status != 200:
+                    raise RuntimeError(
+                        f"Respuesta inesperada de BGG: HTTP {response.status}"
+                    )
+
+                data = response.read()
+
+                if not data:
+                    raise RuntimeError(
+                        "BGG devolvió una respuesta vacía."
+                    )
+
+                return data
 
         except urllib.error.HTTPError as e:
             if e.code == 202:
                 print(
                     f"BGG está preparando la colección. "
-                    f"Intento {attempt}/5. Esperando 10 segundos..."
+                    f"Intento {attempt}/10. Esperando 10 segundos..."
                 )
                 time.sleep(10)
                 continue
+
             raise
 
     raise RuntimeError(
-        "BGG siguió devolviendo HTTP 202 después de varios intentos."
+        "BGG no terminó de preparar la colección "
+        "después de 10 intentos."
     )
 
 
