@@ -216,6 +216,9 @@ for item in root.findall("item"):
     games.append(game)
 
 
+owned_ids = sorted(set(owned_ids))
+wishlist_ids = sorted(set(wishlist_ids))
+
 result = {
     "metadata": {
         "username": BGG_USERNAME,
@@ -224,8 +227,8 @@ result = {
         "owned_count": len(owned_ids),
         "wishlist_count": len(wishlist_ids),
     },
-    "owned_ids": sorted(set(owned_ids)),
-    "wishlist_ids": sorted(set(wishlist_ids)),
+    "owned_ids": owned_ids,
+    "wishlist_ids": wishlist_ids,
     "games": sorted(games, key=lambda g: (g["name"].lower(), g["id"])),
 }
 
@@ -241,6 +244,6 @@ with open("collection.json", "w", encoding="utf-8") as f:
 
 print(
     f"OK: {len(games)} elementos, "
-    f"{len(set(owned_ids))} juegos poseídos y "
-    f"{len(set(wishlist_ids))} juegos en wishlist."
+    f"{len(owned_ids)} juegos poseídos y "
+    f"{len(wishlist_ids)} juegos en wishlist."
 )
