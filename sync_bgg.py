@@ -46,9 +46,6 @@ def download_collection():
 
 
 xml_data = download_collection()
-print("Primeros 1000 caracteres de la respuesta de BGG:")
-print(xml_data[:1000].decode("utf-8", errors="replace"))
-
 root = ET.fromstring(xml_data)
 
 owned = []
