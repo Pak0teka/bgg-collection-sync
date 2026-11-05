@@ -116,6 +116,8 @@ for item in root.findall("item"):
         "subtype": item.attrib.get("subtype"),
         "collection_id": as_int(item.attrib.get("collid")),
         "plays": as_int(item.findtext("numplays"), 0),
+        "image": item.findtext("image"),
+        "thumbnail": item.findtext("thumbnail"),
     }
 
     if status is not None:
