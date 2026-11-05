@@ -1,6 +1,10 @@
 name: Sync BGG collection
 
 on:
+  push:
+    paths:
+      - 'sync_bgg.py'
+      - '.github/workflows/sync.yml'
   workflow_dispatch:
   schedule:
     - cron: "23 5 * * *"
