@@ -85,7 +85,13 @@ def parse_details(item, updated):
             continue
         target = bases if link.attrib.get("inbound") == "true" else expansions
         target[linked_id] = {"id": linked_id, "name": link.attrib.get("value", "")}
-    return {"schema": 1, "type": kind, "updated": updated,
+    weight_node = item.find("statistics/ratings/averageweight")
+    weight = as_float(weight_node.attrib.get("value")) if weight_node is not None else None
+    taxonomy = lambda name: [{"id": as_int(x.attrib.get("id")), "name": x.attrib.get("value", "")}
+                             for x in item.findall("link") if x.attrib.get("type") == name]
+    return {"schema": 1, "filter_schema": 1, "type": kind, "updated": updated,
+            "complexity": weight if weight and 1 <= weight <= 5 else None,
+            "categories": taxonomy("boardgamecategory"), "mechanics": taxonomy("boardgamemechanic"),
             "base_games": list(bases.values()), "expansions": list(expansions.values())}
 
 
@@ -104,7 +110,7 @@ def enrich_games(games):
     for game_id in sorted({g["id"] for g in games}):
         detail = cache.get(game_id)
         try:
-            fresh = detail and (now - datetime.fromisoformat(detail["updated"])).total_seconds() < 30 * 86400
+            fresh = detail and detail.get("filter_schema") == 1 and (now - datetime.fromisoformat(detail["updated"])).total_seconds() < 30 * 86400
         except (KeyError, ValueError, TypeError):
             fresh = False
         if not fresh:
@@ -113,7 +119,7 @@ def enrich_games(games):
     for offset in range(0, len(needed), 20):
         batch = needed[offset:offset + 20]
         try:
-            response = fetch_xml("https://boardgamegeek.com/xmlapi2/thing?id=" + ",".join(map(str, batch)))
+            response = fetch_xml("https://boardgamegeek.com/xmlapi2/thing?id=" + ",".join(map(str, batch)) + "&stats=1")
             returned = set()
             for item in response.findall("item"):
                 game_id = as_int(item.attrib.get("id"))
@@ -139,7 +145,7 @@ def enrich_games(games):
         else:
             game["subtype"] = None
     unique = {g["id"]: g for g in games}
-    return {"schema": 1, "verified_count": sum(bool(g.get("bgg_details")) for g in unique.values()),
+    return {"schema": 1, "filter_schema": 1, "filter_verified_count": sum(g.get("bgg_details", {}).get("filter_schema") == 1 for g in unique.values()), "verified_count": sum(bool(g.get("bgg_details")) for g in unique.values()),
             "pending_count": sum(not g.get("bgg_details") for g in unique.values()),
             "cache_days": 30, "warnings": sorted(set(errors))}
 
