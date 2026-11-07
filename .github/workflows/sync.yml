@@ -4,6 +4,8 @@ on:
   push:
     paths:
       - 'sync_bgg.py'
+      - 'sync_plays.py'
+      - 'pakoteca-history-public.pem'
       - '.github/workflows/sync.yml'
   workflow_dispatch:
   schedule:
@@ -30,10 +32,18 @@ jobs:
           BGG_TOKEN: ${{ secrets.BGG_TOKEN }}
         run: python sync_bgg.py
 
+      - name: Install history encryption
+        run: python -m pip install cryptography==46.0.3
+
+      - name: Sync encrypted BGG history
+        env:
+          BGG_TOKEN: ${{ secrets.BGG_TOKEN }}
+        run: python sync_plays.py
+
       - name: Commit updated collection
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add collection.json
+          git add collection.json plays.encrypted.json
           git diff --cached --quiet || git commit -m "Update BGG collection"
           git push
