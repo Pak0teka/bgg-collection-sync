@@ -128,6 +128,9 @@ def parse_products(html, section):
             continue
         stock = " ".join(t.get("available_stock", "").split())
         availability = "preorder" if "preventa" in stock.lower() else "in_stock" if "stock" in stock.lower() and "sin stock" not in stock.lower() or "últimas unidades" in stock.lower() else "unknown"
+        if "preventa" in (name+" "+url).lower() and availability == "in_stock":
+            availability = "preorder"
+            stock = "Posible preventa; confirma fecha y disponibilidad en la tienda"
         if "agotado" in stock.lower() and "casi" not in stock.lower():
             availability = "out_of_stock"
         result.append({"id": "draco_"+str(p["id"]), "name": name, "url": url, "image": p["image"], "price": current, "referencePrice": reference if reference and reference > current else None, "currency": "EUR", "availability": availability, "stockLabel": stock or "Disponibilidad no indicada", "store": "Dracotienda", "section": section})
