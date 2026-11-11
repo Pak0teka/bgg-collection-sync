@@ -204,6 +204,8 @@ def main():
         else:
             points.append(point)
         history[p["id"]] = points[-90:]
+    from market_sync import update_market
+    data = update_market(data, fetch)
     with open("discovery.json.tmp", "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, separators=(",", ":"))
     os.replace("discovery.json.tmp", "discovery.json")
