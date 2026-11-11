@@ -6,6 +6,7 @@ on:
       - 'sync_bgg.py'
       - 'sync_plays.py'
       - 'sync_discovery.py'
+      - 'market_sync.py'
       - 'pakoteca-history-public.pem'
       - '.github/workflows/sync.yml'
   workflow_dispatch:
