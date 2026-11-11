@@ -108,6 +108,22 @@ def enrich(items,old,fetch):
  except (OSError,ValueError,KeyError): collection=[]
  for g in collection+list(cache.values()):
   for name in [g['name']]+g.get('names',[]): aliases.setdefault(key(name),set()).add(int(g['id']))
+ # Reuse explicit IDs supplied with the same title by another source.
+ for p in items:
+  if p.get('bggId'): aliases.setdefault(key(p['name']),set()).add(int(p['bggId']))
+ # Read a bounded set of public comparator detail pages; never follow redirect endpoints.
+ detail_count=0
+ for p in items:
+  if p.get('sourceId')!='sheep' or p.get('bggId') or len(aliases.get(key(p['name']),set()))==1: continue
+  url=p.get('sourceURL','');cached=lookup.get('detail:'+url)
+  if cached and time.time()-cached.get('time',0)<2592000:
+   p['bggId']=cached.get('id');p['matchMethod']='source';continue
+  if detail_count>=30 or not url.startswith('https://needsheep.com/comparar/'): continue
+  try:
+   detail_count+=1;time.sleep(1.2);html=fetch(url);matches=set(re.findall(r'https://boardgamegeek\.com/boardgame/(\d+)',html));gid=int(next(iter(matches))) if len(matches)==1 else None
+   lookup['detail:'+url]=dict(id=gid,time=time.time());p['bggId']=gid;p['matchMethod']='source'
+   if gid: aliases.setdefault(key(p['name']),set()).add(gid)
+  except Exception: pass
  queries=0
  for p in items:
   k=key(p['name']);hits=aliases.get(k,set());found=lookup.get(k)
@@ -148,6 +164,8 @@ def update_market(data,fetch):
   sources[sid]=info;items.extend(info['items'])
  games,lookup,warning=enrich(items,old,fetch)
  history=old.get('history',{}).copy()
+ for p in items:
+  if p['sourceId']=='draco' and p['id'] not in history and data.get('priceHistory',{}).get(p['id']): history[p['id']]=data['priceHistory'][p['id']].copy()
  for p in items:
   if sources[p['sourceId']]['status']!='imported': continue
   points=history.setdefault(p['id'],[]);stamp=p['checked'][:10];point=dict(date=stamp,price=p['price'],shipping=p.get('shipping'))
