@@ -165,7 +165,9 @@ def update_market(data,fetch):
  games,lookup,warning=enrich(items,old,fetch)
  history=old.get('history',{}).copy()
  for p in items:
-  if p['sourceId']=='draco' and p['id'] not in history and data.get('priceHistory',{}).get(p['id']): history[p['id']]=data['priceHistory'][p['id']].copy()
+  if p['sourceId']=='draco' and data.get('priceHistory',{}).get(p['id']):
+   merged={x['date']:x for x in data['priceHistory'][p['id']]+history.get(p['id'],[])}
+   history[p['id']]=[merged[d] for d in sorted(merged)][-180:]
  for p in items:
   if sources[p['sourceId']]['status']!='imported': continue
   points=history.setdefault(p['id'],[]);stamp=p['checked'][:10];point=dict(date=stamp,price=p['price'],shipping=p.get('shipping'))
